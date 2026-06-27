@@ -1,0 +1,52 @@
+version: '3.8'
+
+services:
+  postgres_db:
+    image: postgres:15
+    container_name: postgres_db
+    restart: always
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - cms_network
+
+  minio:
+    image: minio/minio
+    container_name: minio_storage
+    restart: always
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    command: server /data --console-address ":9001"
+    ports:
+      # API port for S3 compatibility
+      - "9000:9000"
+      # Web UI
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+    networks:
+      - cms_network
+
+  adminer:
+    image: adminer
+    container_name: adminer_ui
+    restart: always
+    ports:
+      - "8080:8080"
+    networks:
+      - cms_network
+
+volumes:
+  postgres_data:
+  minio_data:
+
+networks:
+  cms_network:
+    driver: bridge
