@@ -1,17 +1,15 @@
-# Python virtual environment
-.venv/
-.venv
-# Environment variables
-.env
-
-# Python cache
-.mypy_cache
+.git
+.gitignore
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
+.Python
+env/
+venv/
+.venv/
+pip-log.txt
+pip-delete-this-directory.txt
+.env
+.env.*
 
-# OS generated files
-.DS_Store
-.vscode/
-.idea/

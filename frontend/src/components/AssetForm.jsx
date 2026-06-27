@@ -44,6 +44,10 @@ export default function AssetForm() {
         filename: file.name,
         content_type: file.type || 'application/octet-stream'
       });
+      
+      const uploadUrl = urlData.presigned_url.replace(
+        'http://minio:9000'
+      );
 
       // Step 2: Direct upload to S3 (MinIO)
       await axios.put(urlData.presigned_url, file, {
