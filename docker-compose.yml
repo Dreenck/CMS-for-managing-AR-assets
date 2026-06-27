@@ -41,7 +41,6 @@ services:
     networks:
       - cms_network
 
-  # НОВИЙ СЕРВІС: БЕКЕНД
   backend:
     build:
       context: .
@@ -51,18 +50,20 @@ services:
     ports:
       - "8000:8000"
     volumes:
-      # Прокидаємо локальну папку app всередину контейнера для hot-reload
       - ./app:/app/app
     environment:
       - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres_db:5432/${POSTGRES_DB}
-      - MINIO_ENDPOINT=http://minio:9000
+      - MINIO_ENDPOINT=${MINIO_ENDPOINT}
+      - MINIO_PUBLIC_URL=${MINIO_PUBLIC_URL}
+      - MINIO_ACCESS_KEY=${MINIO_ACCESS_KEY}
+      - MINIO_SECRET_KEY=${MINIO_SECRET_KEY}
+      - MINIO_BUCKET_NAME=${MINIO_BUCKET_NAME}
     depends_on:
       - postgres_db
       - minio
     networks:
       - cms_network
 
-  # НОВИЙ СЕРВІС: ФРОНТЕНД
   frontend:
     build:
       context: ./frontend
