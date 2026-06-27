@@ -4,6 +4,7 @@ from sqlalchemy.future import select
 from pydantic import BaseModel
 from typing import List
 from scalar_fastapi import get_scalar_api_reference
+from fastapi.middleware.cors import CORSMiddleware
 
 from . import models, schemas
 from .database import engine, get_db
@@ -14,6 +15,16 @@ app = FastAPI(
     title="AR Headless CMS API",
     description="Backend for managing AR assets (3D models, audio, markers)",
     version="1.0.0"
+)
+
+
+# Setup CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173"],  
+    allow_credentials=True,
+    allow_methods=["*"],  # All methods
+    allow_headers=["*"],  
 )
 
 # Create database tables on startup
