@@ -51,22 +51,25 @@ sequenceDiagram
 CMS/
 ├── app/                  # FastAPI Backend source code
 │   ├── database.py       # Async SQLAlchemy engine/session config
-│   ├── main.py           # API endpoints (FastAPI app)
-│   ├── models.py         # SQLAlchemy database models (PostgreSQL)
+│   ├── main.py           # API endpoints (FastAPI app with CRUD + S3 upload helper)
+│   ├── models.py         # SQLAlchemy database models (including is_public & owner_id)
 │   ├── schemas.py        # Pydantic schemas (validation)
-│   └── s3_service.py     # MinIO / S3 helper methods (presigned URL gen)
+│   └── s3_service.py     # MinIO / R2 S3 helper (presigned URL & bucket policy manager)
 ├── frontend/             # Vite + React Frontend project
 │   ├── src/
-│   │   ├── components/   # React components (AssetForm.jsx)
-│   │   ├── App.jsx       # Main application entry component
-│   │   └── main.jsx      # React DOM client mounting
+│   │   ├── components/   
+│   │   │   ├── AssetForm.jsx    # Asset Upload Form (with Clerk ownership & visibility toggle)
+│   │   │   └── AssetGallery.jsx  # Asset Gallery (3D model, audio, and marker renderer)
+│   │   ├── App.jsx       # Main component (tab navigation & Clerk auth gates)
+│   │   └── main.jsx      # React mounting (with ClerkProvider wrapper)
 │   ├── dockerfile        # Frontend Docker config
 │   └── package.json      # Frontend JS dependencies & scripts
-├── docker-compose.yml    # Main multi-container orchestrator
+├── docker-compose.yml    # Orchestrator (configured with global CORS parameters)
 ├── dockerfile            # Backend Docker config
 ├── requirements.txt      # Python backend requirements
 └── .env.example          # Template environment configurations
 ```
+
 
 ---
 
@@ -98,7 +101,13 @@ Once started, the services will be available at:
 * **MinIO Console**: [http://localhost:9001](http://localhost:9001) (Access: `minio_admin` / `minio_password`)
 * **Adminer (Database GUI)**: [http://localhost:8080](http://localhost:8080) (Select DB: `PostgreSQL`, System: `postgres_db`, DB Name: `cms_database`, User: `cms_admin`, Password: `cms_password`)
 
+### Authentication (Clerk Setup)
+- This project integrates **Clerk** for user authentication.
+- To configure authentication, set `VITE_CLERK_PUBLISHABLE_KEY=your_key` in `.env` (obtain your key from the [Clerk Dashboard](https://dashboard.clerk.com/)).
+- **Auth Dev Bypass**: If `VITE_CLERK_PUBLISHABLE_KEY` is left blank in `.env`, the application automatically runs in **Dev Mode**, bypassing authentication checks so you can test all features locally without configuration.
+
 ---
+
 
 ## Local Development (Manual Setup)
 
@@ -159,8 +168,10 @@ If you prefer to run services locally without Docker, follow these instructions.
 | Method | Endpoint | Description |
 | :--- | :--- | :--- |
 | `POST` | `/api/v1/upload-url` | Generate presigned S3 upload URL for a file. |
-| `POST` | `/api/v1/assets` | Save asset metadata (title, type, description, public URL) to database. |
-| `GET` | `/api/v1/assets` | Retrieve list of all uploaded assets. |
+| `POST` | `/api/v1/assets` | Save asset metadata (title, type, description, public URL, is_public, owner_id) to database. |
+| `GET` | `/api/v1/assets` | Retrieve list of uploaded assets (supports `public_only` and `owner_id` query parameters). |
+| `DELETE` | `/api/v1/assets/{asset_id}` | Deletes the asset metadata from PostgreSQL and deletes the raw file from MinIO/S3. |
+
 
 ---
 

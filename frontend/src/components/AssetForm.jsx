@@ -1,12 +1,15 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import '@google/model-viewer';
+import { useUser } from '@clerk/clerk-react';
 
-export default function AssetForm() {
+
+function BaseAssetForm({ ownerId }) {
   const [formData, setFormData] = useState({
     title: '',
     description: '',
-    asset_type: '3d_model'
+    asset_type: '3d_model',
+    is_public: true
   });
   const [file, setFile] = useState(null);
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -15,6 +18,10 @@ export default function AssetForm() {
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleCheckboxChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.checked });
   };
 
   const handleFileChange = (e) => {
@@ -44,12 +51,8 @@ export default function AssetForm() {
         filename: file.name,
         content_type: file.type || 'application/octet-stream'
       });
-      
-      const uploadUrl = urlData.presigned_url.replace(
-        'http://minio:9000'
-      );
 
-      // Step 2: Direct upload to S3 (MinIO)
+      // Step 2: Direct upload to S3 (MinIO / Cloudflare R2)
       await axios.put(urlData.presigned_url, file, {
         headers: {
           'Content-Type': file.type || 'application/octet-stream',
@@ -65,13 +68,15 @@ export default function AssetForm() {
         title: formData.title,
         description: formData.description,
         asset_type: formData.asset_type,
-        file_url: urlData.file_url
+        file_url: urlData.file_url,
+        is_public: formData.is_public,
+        owner_id: ownerId
       });
 
       alert("Content uploaded and saved successfully!");
       
       // Clear the form
-      setFormData({ title: '', description: '', asset_type: '3d_model' });
+      setFormData({ title: '', description: '', asset_type: '3d_model', is_public: true });
       setFile(null);
       setPreviewUrl(null);
       setUploadProgress(0);
@@ -117,6 +122,23 @@ export default function AssetForm() {
               <option value="audio">Audio</option>
               <option value="marker">Marker</option>
             </select>
+          </div>
+
+          <div className="flex items-start mt-2">
+            <div className="flex items-center h-5">
+              <input
+                id="is_public"
+                name="is_public"
+                type="checkbox"
+                checked={formData.is_public}
+                onChange={handleCheckboxChange}
+                className="focus:ring-blue-500 h-4 w-4 text-blue-600 border-gray-300 rounded"
+              />
+            </div>
+            <div className="ml-3 text-sm">
+              <label htmlFor="is_public" className="font-medium text-gray-700">Make Public (Allow anyone to view)</label>
+              <p className="text-xs text-gray-500">Unchecking makes this private. <em>(Private hosting requires a premium subscription in future)</em></p>
+            </div>
           </div>
 
           <div>
@@ -165,4 +187,19 @@ export default function AssetForm() {
       </div>
     </div>
   );
+}
+
+function ClerkForm() {
+  const { user } = useUser();
+  return <BaseAssetForm ownerId={user?.id || null} />;
+}
+
+export default function AssetForm() {
+  const isClerkConfigured = !!import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
+
+  if (isClerkConfigured) {
+    return <ClerkForm />;
+  } else {
+    return <BaseAssetForm ownerId={null} />;
+  }
 }

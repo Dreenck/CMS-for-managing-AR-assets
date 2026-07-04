@@ -34,8 +34,27 @@ async def generate_presigned_url(filename: str, file_type: str) -> dict | None:
                 await s3_client_internal.head_bucket(Bucket=BUCKET_NAME)
             except ClientError:
                 await s3_client_internal.create_bucket(Bucket=BUCKET_NAME)
+            
+            # ponytail: Set public bucket policy and CORS so browser can fetch/render assets natively
+            import json
+            policy = {
+                "Version": "2012-10-17",
+                "Statement": [
+                    {
+                        "Sid": "PublicRead",
+                        "Effect": "Allow",
+                        "Principal": "*",
+                        "Action": ["s3:GetObject"],
+                        "Resource": [f"arn:aws:s3:::{BUCKET_NAME}/*"]
+                    }
+                ]
+            }
+            await s3_client_internal.put_bucket_policy(
+                Bucket=BUCKET_NAME,
+                Policy=json.dumps(policy)
+            )
         except Exception as e:
-            print(f"Error checking/creating bucket: {e}")
+            print(f"Error checking/creating/configuring bucket: {e}")
             return None
 
     # Use public endpoint for generating the presigned URL

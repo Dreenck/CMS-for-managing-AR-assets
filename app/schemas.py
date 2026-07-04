@@ -4,15 +4,17 @@ from typing import Optional
 from pydantic import BaseModel
 from .models import AssetType
 
-# Schema for creating a new asset (Input validation)
 
 
 class AssetCreate(BaseModel):
     title: str
     description: Optional[str] = None
     asset_type: AssetType
+    file_url: Optional[str] = None
+    is_public: bool = True  # ponytail: default True
+    owner_id: Optional[str] = None
 
-# Schema for returning an asset (Output formatting)
+
 
 
 class AssetResponse(BaseModel):
@@ -21,8 +23,11 @@ class AssetResponse(BaseModel):
     description: Optional[str]
     asset_type: AssetType
     file_url: Optional[str]
+    is_public: bool
+    owner_id: Optional[str]
     created_at: datetime
 
     class Config:
         # Tells Pydantic to read data even if it's not a dict, but an ORM model
         from_attributes = True
+

@@ -1,11 +1,10 @@
 import uuid
 import enum
 from datetime import datetime
-from sqlalchemy import Column, String, Text, Enum, DateTime
+from sqlalchemy import Column, String, Text, Enum, DateTime, Boolean
 from sqlalchemy.dialects.postgresql import UUID
 from .database import Base
 
-# Define Enum for asset types
 
 
 class AssetType(str, enum.Enum):
@@ -24,6 +23,8 @@ class Asset(Base):
     title = Column(String(255), nullable=False)
     description = Column(Text, nullable=True)
     asset_type: Column = Column(Enum(AssetType), nullable=False)
-    # Will be updated in Stage 3 after S3 upload
     file_url = Column(String, nullable=True)
+    is_public = Column(Boolean, default=True, nullable=False)  # ponytail: default True, private requires premium/sub
+    owner_id = Column(String, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
+
