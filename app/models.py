@@ -9,6 +9,7 @@ from .database import Base
 
 class AssetType(str, enum.Enum):
     model_3d = "3d_model"
+    texture = "texture"
     audio = "audio"
     marker = "marker"
 
@@ -24,7 +25,7 @@ class Asset(Base):
     description = Column(Text, nullable=True)
     asset_type: Column = Column(Enum(AssetType), nullable=False)
     file_url = Column(String, nullable=True)
-    is_public = Column(Boolean, default=True, nullable=False)  # ponytail: default True, private requires premium/sub
+    is_public = Column(Boolean, default=True, nullable=False) 
     owner_id = Column(String, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 

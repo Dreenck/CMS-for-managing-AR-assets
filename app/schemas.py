@@ -11,7 +11,7 @@ class AssetCreate(BaseModel):
     description: Optional[str] = None
     asset_type: AssetType
     file_url: Optional[str] = None
-    is_public: bool = True  # ponytail: default True
+    is_public: bool = True  
     owner_id: Optional[str] = None
 
 
