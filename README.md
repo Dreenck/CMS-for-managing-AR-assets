@@ -93,7 +93,7 @@ CMS/
 
 ## Quick Start (Docker Compose)
 
-The easiest way to run the entire stack is via **Docker Compose**:
+The easiest way to run the entire stack is via **Docker Compose**. In this mode, a single `.env` file in the root directory manages the configuration for all services (PostgreSQL, MinIO, Backend, and Frontend).
 
 1. **Clone the repository**:
    ```bash
@@ -101,11 +101,14 @@ The easiest way to run the entire stack is via **Docker Compose**:
    cd CMS-for-managing-AR-assets
    ```
 
-2. **Configure environment variables**:
-   Copy `.env.example` to `.env` and adjust the variables if needed.
+2. **Configure environment variables (Root Only)**:
+   Copy `.env.example` in the **root** folder to `.env`:
    ```bash
    cp .env.example .env
    ```
+   Open the root `.env` file and configure your settings (e.g., Clerk API Keys, database, etc.).
+   > [!IMPORTANT]
+   > You **do not** need to copy or configure any `.env` files inside the `frontend` folder when using Docker Compose. The environment variables from the root `.env` are automatically mapped and injected into both containers.
 
 3. **Start all services**:
    ```bash
@@ -148,13 +151,13 @@ To promote yourself to an administrator:
 
 ## Local Development (Manual Setup)
 
-If you prefer to run services locally without Docker, follow these instructions.
+If you prefer to run services locally on your host OS without Docker, you will need to set up the backend and frontend separately. This requires configuring a `.env` file in **both** folders.
 
 ### 1. Prerequisites
 - Python 3.11+
 - Node.js 18+ & npm
 - PostgreSQL running locally or remotely
-- MinIO (or AWS S3 bucket)
+- MinIO (or AWS S3 bucket) running locally
 
 ### 2. Backend Setup
 1. Navigate to the root directory and create a virtual environment:
@@ -166,7 +169,11 @@ If you prefer to run services locally without Docker, follow these instructions.
    ```bash
    pip install -r requirements.txt
    ```
-3. Set up environment variables (copy `.env.example` to `.env` and fill in local configs).
+3. **Configure Environment Variables**:
+   Copy `.env.example` in the **root** directory to `.env` and fill in your local Postgres and MinIO credentials:
+   ```bash
+   cp .env.example .env
+   ```
 4. Run the development server:
    ```bash
    uvicorn app.main:app --reload
@@ -178,16 +185,24 @@ If you prefer to run services locally without Docker, follow these instructions.
    ```bash
    cd frontend
    ```
-2. Install JS dependencies:
+2. **Configure Environment Variables**:
+   Copy the `frontend` environment template to `.env`:
+   ```bash
+   cp .env.example .env
+   ```
+   Open `frontend/.env` and define:
+   * `VITE_API_BASE_URL` (usually `http://localhost:8000` to point to the backend API)
+   * `VITE_CLERK_PUBLISHABLE_KEY` (if you are using Clerk authentication)
+3. Install JS dependencies:
    ```bash
    npm install
    ```
-3. Start the Vite dev server:
+4. Start the Vite dev server:
    ```bash
    npm run dev
    ```
    The frontend will be running at `http://localhost:5173`.
-4. Lint code:
+5. Lint code:
    ```bash
    npm run lint
    ```
