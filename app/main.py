@@ -10,6 +10,7 @@ from . import models, schemas
 from .database import engine, get_db
 from .services.s3_service import generate_presigned_url, INTERNAL_ENDPOINT_URL, ACCESS_KEY, SECRET_KEY, BUCKET_NAME, session
 from .core.asset_config import ASSET_RULES
+from .core import security
 import uuid
 
 
@@ -50,14 +51,22 @@ async def get_asset_rules():
 
 
 @app.post("/api/v1/assets", response_model=schemas.AssetResponse, status_code=201)
-async def create_asset(asset: schemas.AssetCreate, db: AsyncSession = Depends(get_db)):
+async def create_asset(
+    asset: schemas.AssetCreate,
+    db: AsyncSession = Depends(get_db),
+    current_user: security.UserSession = Depends(security.get_current_user)
+):
+    owner_id = current_user.user_id
+    if current_user.is_mock and asset.owner_id:
+        owner_id = asset.owner_id
+
     new_asset = models.Asset(
         title=asset.title,
         description=asset.description,
         asset_type=asset.asset_type,
         file_url=asset.file_url,
         is_public=asset.is_public,
-        owner_id=asset.owner_id
+        owner_id=owner_id
     )
     db.add(new_asset)
     await db.commit()
@@ -69,24 +78,46 @@ async def create_asset(asset: schemas.AssetCreate, db: AsyncSession = Depends(ge
 async def get_assets(
     public_only: bool = False,
     owner_id: Optional[str] = None,
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
+    current_user: Optional[security.UserSession] = Depends(security.get_optional_user)
 ):
     stmt = select(models.Asset)
-    if public_only:
-        stmt = stmt.where(models.Asset.is_public)
+    
+    # Check permissions: non-admins can only see public assets or their own assets
+    user_id = current_user.user_id if current_user else None
+    is_admin = current_user.is_admin if current_user else False
+    
+    if not is_admin:
+        if public_only:
+            stmt = stmt.where(models.Asset.is_public)
+        else:
+            if user_id:
+                stmt = stmt.where((models.Asset.is_public) | (models.Asset.owner_id == user_id))
+            else:
+                stmt = stmt.where(models.Asset.is_public)
+                
     if owner_id:
         stmt = stmt.where(models.Asset.owner_id == owner_id)
+        
     result = await db.execute(stmt)
     assets = result.scalars().all()
     return assets
 
 
 @app.delete("/api/v1/assets/{asset_id}", status_code=204)
-async def delete_asset(asset_id: uuid.UUID, db: AsyncSession = Depends(get_db)):
+async def delete_asset(
+    asset_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user: security.UserSession = Depends(security.get_current_user)
+):
     result = await db.execute(select(models.Asset).where(models.Asset.id == asset_id))
     asset = result.scalar_one_or_none()
     if not asset:
         raise HTTPException(status_code=404, detail="Asset not found")
+
+    # Enforce permissions: Admin or Owner only
+    if not current_user.is_admin and asset.owner_id != current_user.user_id:
+        raise HTTPException(status_code=403, detail="Forbidden: You are not authorized to delete this asset")
 
     if asset.file_url:
         # Extract filename (key) from file_url
@@ -105,6 +136,37 @@ async def delete_asset(asset_id: uuid.UUID, db: AsyncSession = Depends(get_db)):
     await db.delete(asset)
     await db.commit()
     return None
+
+
+@app.put("/api/v1/assets/{asset_id}", response_model=schemas.AssetResponse, summary="Update asset metadata")
+async def update_asset(
+    asset_id: uuid.UUID,
+    asset_update: schemas.AssetUpdate,
+    db: AsyncSession = Depends(get_db),
+    current_user: security.UserSession = Depends(security.get_current_user)
+):
+    result = await db.execute(select(models.Asset).where(models.Asset.id == asset_id))
+    asset = result.scalar_one_or_none()
+    if not asset:
+        raise HTTPException(status_code=404, detail="Asset not found")
+
+    # Enforce permissions: Admin or Owner only
+    if not current_user.is_admin and asset.owner_id != current_user.user_id:
+        raise HTTPException(status_code=403, detail="Forbidden: You are not authorized to update this asset")
+
+    if asset_update.title is not None:
+        asset.title = asset_update.title
+    if asset_update.description is not None:
+        asset.description = asset_update.description
+    if asset_update.is_public is not None:
+        asset.is_public = asset_update.is_public
+
+    await db.commit()
+    await db.refresh(asset)
+    return asset
+
+
+
 
 
 class PresignedUrlRequest(BaseModel):

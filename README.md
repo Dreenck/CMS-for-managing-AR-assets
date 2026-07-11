@@ -101,13 +101,32 @@ Once started, the services will be available at:
 * **MinIO Console**: [http://localhost:9001](http://localhost:9001) (Access: `minio_admin` / `minio_password`)
 * **Adminer (Database GUI)**: [http://localhost:8080](http://localhost:8080) (Select DB: `PostgreSQL`, System: `postgres_db`, DB Name: `cms_database`, User: `cms_admin`, Password: `cms_password`)
 
-### Authentication (Clerk Setup)
-- This project integrates **Clerk** for user authentication.
-- To configure authentication, set `VITE_CLERK_PUBLISHABLE_KEY=your_key` in `.env` (obtain your key from the [Clerk Dashboard](https://dashboard.clerk.com/)).
-- **Auth Dev Bypass**: If `VITE_CLERK_PUBLISHABLE_KEY` is left blank in `.env`, the application automatically runs in **Dev Mode**, bypassing authentication checks so you can test all features locally without configuration.
+### Authentication & Security (Clerk Setup)
+
+This project integrates **Clerk** for Role-Based Access Control (RBAC) on both the React frontend and FastAPI backend:
+
+#### 1. Developer Bypass Mode
+* If `VITE_CLERK_PUBLISHABLE_KEY` is left blank in `.env`, the application automatically runs in **Dev Mode**, bypassing authentication checks.
+* In Dev Mode, you will have automatic access to the **Admin Dashboard** and full rights to create, update, and delete any assets.
+
+#### 2. Creating an Admin User
+To promote yourself to an administrator:
+1. Open the [Clerk Dashboard](https://dashboard.clerk.com/) and go to **Users**.
+2. Click on your user account and scroll down to the **Metadata** section.
+3. Under **Public Metadata**, enter the role claim:
+   ```json
+   {
+     "role": "admin"
+   }
+   ```
+4. Click **Save** and re-login on the frontend. The Admin Dashboard tab will now appear.
+
+#### 3. Endpoint Security Rules
+* **Read (`GET /api/v1/assets`)**: Public assets are readable by anyone. Logged-in non-admins can retrieve their own private assets. Administrators can retrieve all assets in the database.
+* **Create (`POST /api/v1/assets`)**: Requires a valid Bearer token. The backend automatically associates the authenticated user's ID to prevent owner spoofing.
+* **Update / Delete (`PUT` & `DELETE` /api/v1/assets/{id})**: Requires that the user is the **Owner** of the asset **OR** has the `admin` role in their metadata.
 
 ---
-
 
 ## Local Development (Manual Setup)
 
@@ -165,13 +184,13 @@ If you prefer to run services locally without Docker, follow these instructions.
 
 ### Key Endpoints
 
-| Method | Endpoint | Description |
-| :--- | :--- | :--- |
-| `POST` | `/api/v1/upload-url` | Generate presigned S3 upload URL for a file. |
-| `POST` | `/api/v1/assets` | Save asset metadata (title, type, description, public URL, is_public, owner_id) to database. |
-| `GET` | `/api/v1/assets` | Retrieve list of uploaded assets (supports `public_only` and `owner_id` query parameters). |
-| `DELETE` | `/api/v1/assets/{asset_id}` | Deletes the asset metadata from PostgreSQL and deletes the raw file from MinIO/S3. |
-
+| Method | Endpoint | Security | Description |
+| :--- | :--- | :--- | :--- |
+| `POST` | `/api/v1/upload-url` | Public | Validate constraints and generate presigned S3 upload URL. |
+| `POST` | `/api/v1/assets` | User Token | Save asset metadata to DB. Sets owner from authenticated token. |
+| `GET` | `/api/v1/assets` | Optional | Retrieve list of assets (Non-admins receive only public + owned assets). |
+| `PUT` | `/api/v1/assets/{asset_id}` | Owner / Admin | Update title, description, or visibility metadata. |
+| `DELETE` | `/api/v1/assets/{asset_id}` | Owner / Admin | Deletes asset metadata from DB and deletes file from S3 storage. |
 
 ---
 

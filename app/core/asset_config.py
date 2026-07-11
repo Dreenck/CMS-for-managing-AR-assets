@@ -1,5 +1,3 @@
-# app/core/asset_config.py
-
 from app.models import AssetType
 
 ASSET_RULES = {

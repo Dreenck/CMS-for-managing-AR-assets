@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import '@google/model-viewer';
-import { useUser } from '@clerk/clerk-react';
+import { useUser, useAuth } from '@clerk/clerk-react';
 
 
-function BaseAssetForm({ ownerId }) {
+function BaseAssetForm({ ownerId, getToken }) {
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -52,7 +52,7 @@ function BaseAssetForm({ ownerId }) {
     if (!selectedFile) return;
 
     const typeRules = rules[formData.asset_type];
-    if (!typeRules) return; // Wait until rules are loaded
+    if (!typeRules) return;
 
     // 1. Validate File Size
     const maxSize = typeRules.max_size_mb * 1024 * 1024;
@@ -103,6 +103,14 @@ function BaseAssetForm({ ownerId }) {
         }
       });
 
+      const headers = {};
+      if (getToken) {
+        const token = await getToken();
+        if (token) {
+          headers.Authorization = `Bearer ${token}`;
+        }
+      }
+
       // Step 3: Save metadata to the database via FastAPI
       await axios.post('http://localhost:8000/api/v1/assets', {
         title: formData.title,
@@ -111,7 +119,7 @@ function BaseAssetForm({ ownerId }) {
         file_url: urlData.file_url,
         is_public: formData.is_public,
         owner_id: ownerId
-      });
+      }, { headers });
 
       alert("Content uploaded and saved successfully!");
       
@@ -256,7 +264,8 @@ function BaseAssetForm({ ownerId }) {
 
 function ClerkForm() {
   const { user } = useUser();
-  return <BaseAssetForm ownerId={user?.id || null} />;
+  const { getToken } = useAuth();
+  return <BaseAssetForm ownerId={user?.id || null} getToken={getToken} />;
 }
 
 export default function AssetForm() {

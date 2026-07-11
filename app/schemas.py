@@ -17,6 +17,17 @@ class AssetCreate(BaseModel):
 
 
 
+class AssetUpdate(BaseModel):
+    title: Optional[str] = None
+    description: Optional[str] = None
+    is_public: Optional[bool] = None
+
+
+
+
+
+
+
 class AssetResponse(BaseModel):
     id: uuid.UUID
     title: str
