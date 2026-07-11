@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
+import api from '../services/api';
 import { useUser, useAuth } from '@clerk/clerk-react';
 import '@google/model-viewer';
 
@@ -31,7 +31,7 @@ function DashboardContent({ clerkUser, getToken }) {
           headers.Authorization = `Bearer ${token}`;
         }
       }
-      const response = await axios.get('http://localhost:8000/api/v1/assets', {
+      const response = await api.get('/api/v1/assets', {
         params: { public_only: false },
         headers
       });
@@ -60,7 +60,7 @@ function DashboardContent({ clerkUser, getToken }) {
           headers.Authorization = `Bearer ${token}`;
         }
       }
-      await axios.delete(`http://localhost:8000/api/v1/assets/${assetId}`, { headers });
+      await api.delete(`/api/v1/assets/${assetId}`, { headers });
       setAssets(assets.filter((a) => a.id !== assetId));
     } catch (err) {
       console.error("Error deleting asset:", err);
@@ -88,7 +88,7 @@ function DashboardContent({ clerkUser, getToken }) {
           headers.Authorization = `Bearer ${token}`;
         }
       }
-      const response = await axios.put(`http://localhost:8000/api/v1/assets/${editingAsset.id}`, {
+      const response = await api.put(`/api/v1/assets/${editingAsset.id}`, {
         title: editTitle,
         description: editDescription,
         is_public: editIsPublic

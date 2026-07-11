@@ -12,6 +12,11 @@ from .services.s3_service import generate_presigned_url, INTERNAL_ENDPOINT_URL, 
 from .core.asset_config import ASSET_RULES
 from .core import security
 import uuid
+import os
+
+# Parse CORS origins from environment variable
+cors_origins_raw = os.getenv("CORS_ORIGINS", "http://localhost:5173")
+cors_origins = [origin.strip() for origin in cors_origins_raw.split(",") if origin.strip()]
 
 
 
@@ -25,7 +30,7 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],  
+    allow_origins=cors_origins,  
     allow_credentials=True,
     allow_methods=["*"],  
     allow_headers=["*"],  

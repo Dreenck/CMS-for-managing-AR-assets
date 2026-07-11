@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import api from '../services/api';
 import axios from 'axios';
 import '@google/model-viewer';
 import { useUser, useAuth } from '@clerk/clerk-react';
@@ -21,7 +22,7 @@ function BaseAssetForm({ ownerId, getToken }) {
   useEffect(() => {
     const fetchRules = async () => {
       try {
-        const response = await axios.get('http://localhost:8000/api/v1/assets/rules');
+        const response = await api.get('/api/v1/assets/rules');
         setRules(response.data);
       } catch (err) {
         console.error("Failed to fetch validation rules from backend:", err);
@@ -85,7 +86,7 @@ function BaseAssetForm({ ownerId, getToken }) {
 
     try {
       // Step 1: Request permission (get Presigned URL from FastAPI)
-      const { data: urlData } = await axios.post('http://localhost:8000/api/v1/upload-url', {
+      const { data: urlData } = await api.post('/api/v1/upload-url', {
         filename: file.name,
         content_type: file.type || 'application/octet-stream',
         asset_type: formData.asset_type,
@@ -112,7 +113,7 @@ function BaseAssetForm({ ownerId, getToken }) {
       }
 
       // Step 3: Save metadata to the database via FastAPI
-      await axios.post('http://localhost:8000/api/v1/assets', {
+      await api.post('/api/v1/assets', {
         title: formData.title,
         description: formData.description,
         asset_type: formData.asset_type,

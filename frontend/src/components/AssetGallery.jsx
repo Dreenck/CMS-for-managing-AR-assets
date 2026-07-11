@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
+import api from '../services/api';
 import '@google/model-viewer';
 import { useUser } from '@clerk/clerk-react';
 
@@ -18,7 +18,7 @@ function GalleryContent({ clerkUser }) {
   useEffect(() => {
     const fetchPublicAssets = async () => {
       try {
-        const response = await axios.get('http://localhost:8000/api/v1/assets', {
+        const response = await api.get('/api/v1/assets', {
           params: { public_only: true }
         });
         setAssets(response.data);

@@ -45,6 +45,24 @@ sequenceDiagram
 
 ---
 
+## Environment Configuration
+
+This project is fully parameterized for deployment. Rather than using hardcoded URLs, the frontend and backend communicate using environment variables. This allows you to host the frontend and backend at completely different locations (e.g., different domains or ports).
+
+### Key Environment Variables
+
+Define these in your root `.env` file:
+
+| Variable | Scope | Description | Default / Local |
+| :--- | :--- | :--- | :--- |
+| `VITE_API_BASE_URL` | Frontend | Base URL of the backend API, used by the centralized [api.js](file:///D:/вігня на робочому/CMS/frontend/src/services/api.js) client. | `http://localhost:8000` |
+| `CORS_ORIGINS` | Backend | Comma-separated list of permitted frontend origins for CORS. | `http://localhost:5173` |
+| `VITE_CLERK_PUBLISHABLE_KEY` | Frontend | Clerk Publishable Key to initialize auth on the client. | *(Optional)* |
+| `CLERK_PUBLISHABLE_KEY` | Backend | Clerk Publishable Key (used by backend to derive JWKS URL for JWT validation). | *(Optional)* |
+| `CLERK_JWKS_URL` | Backend | Explicit JWKS URL for verifying Clerk authentication tokens. | *(Derived from key)* |
+
+---
+
 ## Project Structure
 
 ```text

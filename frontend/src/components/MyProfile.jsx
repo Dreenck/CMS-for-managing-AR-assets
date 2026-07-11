@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
+import api from '../services/api';
 import '@google/model-viewer';
 import { useUser, useAuth } from '@clerk/clerk-react';
 
@@ -39,7 +39,7 @@ function ProfileContent({ clerkUser, getToken }) {
         }
       }
       
-      const response = await axios.get('http://localhost:8000/api/v1/assets', { params, headers });
+      const response = await api.get('/api/v1/assets', { params, headers });
       
       // If Clerk is configured but we are logged in, we only see our own.
       // If Clerk is bypassed, we show all assets as if they belong to this dev profile.
@@ -72,7 +72,7 @@ function ProfileContent({ clerkUser, getToken }) {
           headers.Authorization = `Bearer ${token}`;
         }
       }
-      await axios.delete(`http://localhost:8000/api/v1/assets/${assetId}`, { headers });
+      await api.delete(`/api/v1/assets/${assetId}`, { headers });
       setAssets(assets.filter((a) => a.id !== assetId));
     } catch (err) {
       console.error("Error deleting asset:", err);
@@ -100,7 +100,7 @@ function ProfileContent({ clerkUser, getToken }) {
           headers.Authorization = `Bearer ${token}`;
         }
       }
-      const response = await axios.put(`http://localhost:8000/api/v1/assets/${editingAsset.id}`, {
+      const response = await api.put(`/api/v1/assets/${editingAsset.id}`, {
         title: editTitle,
         description: editDescription,
         is_public: editIsPublic
